@@ -51,9 +51,9 @@ def get_data(url, cmd):
   """
   Make an HTTP call to get all data for a command
   """
-  print url.format(cmd)
   r = requests.get(url.format(cmd))
   if r.status_code == STATUS_OK:
+    print r.text
     if "json" in r.headers['content-type']:
       return r.json()
     else:
@@ -66,6 +66,7 @@ def lookup(cmd):
   """
   output = []
   data = get_data(BRO_URL, cmd)
+  """
   if data:
     for entry in data:
       print "---"
@@ -73,8 +74,7 @@ def lookup(cmd):
       print "---"
 
   data = get_data(TLDR_URL, cmd)
-  if data:
-    print data
+  """
   """
   entries = [entry["msg"].strip().splitlines()
                 for entry in data if is_good(entry)]
