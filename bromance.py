@@ -17,7 +17,7 @@ init(autoreset=True)
 
 # Retrieve entries from the following websites
 BRO_URL =  "http://bropages.org/{}.json"
-TLDR_URL = "https://raw.github.com/rprieto/tldr/master/pages/osx/{}.md"
+TLDR_URL = "https://raw.github.com/rprieto/tldr/master/pages/common/{}.md"
 
 # HTTP status code for successful retrieval
 STATUS_OK = 200
@@ -27,6 +27,8 @@ def prettyprint(lines):
   Format the output for the commandline
   """
   for line in lines:
+    if not line:
+      continue # Omit empty lines
     # Check for formatting in line
     if line.startswith("#") or line.startswith("-"):
       # We found an entry title.
@@ -53,11 +55,27 @@ def get_data(url, cmd):
   """
   r = requests.get(url.format(cmd))
   if r.status_code == STATUS_OK:
-    print r.text
     if "json" in r.headers['content-type']:
-      return r.json()
+      return r.json
     else:
       return r.text
+
+def lookup_bro(cmd):
+  data = get_data(BRO_URL, cmd)
+  if not data:
+    return # No entry found
+  entries = [entry["msg"].strip().splitlines()
+                for entry in data if is_good(entry)]
+  lines = [line for entry in entries for line in entry]
+  return lines
+
+def lookup_tldr(cmd):
+  data = get_data(TLDR_URL, cmd)
+  if not data:
+    return # No entry found
+  lines = [line for line in data.strip().splitlines()[1:]
+                if line and not line.startswith(">")]
+  return lines
 
 def lookup(cmd):
   """
@@ -65,36 +83,19 @@ def lookup(cmd):
   and print the output to the commandline.
   """
   output = []
-  data = get_data(BRO_URL, cmd)
-  """
-  if data:
-    for entry in data:
-      print "---"
-      print entry["msg"]
-      print "---"
+  entries_bro = lookup_bro(cmd)
+  if entries_bro:
+    output.extend(entries_bro)
 
-  data = get_data(TLDR_URL, cmd)
-  """
-  """
-  entries = [entry["msg"].strip().splitlines()
-                for entry in data if is_good(entry)]
-  bro_lines = [line for entry in entries for line in entry]
-  print bro_lines
-  output.append(bro_lines)
 
-  data = get_data(TLDR_URL, cmd)
-  print data
-  tldr_lines = [line for line in data.strip().splitlines()[1:]
-                if line and not line.startswith(">")]
-  print tldr_lines
-  output.append(tldr_lines)
+  entries_tldr = lookup_tldr(cmd)
+  if entries_tldr:
+    output.extend(entries_tldr)
 
   if not output:
       sys.exit("Oops. Can't find an entry for `{}`.".format(cmd))
 
   prettyprint(output)
-  """
-
 
 def main():
   """
