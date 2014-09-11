@@ -65,7 +65,7 @@ def lookup_bro(cmd):
   if not data:
     return # No entry found
   entries = [entry["msg"].strip().splitlines()
-                for entry in data if is_good(entry)]
+                for entry in data() if is_good(entry)]
   lines = [line for entry in entries for line in entry]
   return lines
 
